@@ -1,11 +1,12 @@
 import folium
 import json
-
 from django.http import HttpResponseNotFound
 from django.shortcuts import render
-
 from .models import Pokemon, PokemonEntity
 from django.utils.timezone import localtime
+from django.core.exceptions import ObjectDoesNotExist
+
+
 
 MOSCOW_CENTER = [55.751244, 37.618423]
 DEFAULT_IMAGE_URL = (
@@ -13,8 +14,6 @@ DEFAULT_IMAGE_URL = (
     '/latest/fixed-aspect-ratio-down/width/240/height/240?cb=20130525215832'
     '&fill=transparent'
 )
-
-
 def add_pokemon(folium_map, lat, lon, image_url=DEFAULT_IMAGE_URL):
     icon = folium.features.CustomIcon(
         image_url,
@@ -26,8 +25,6 @@ def add_pokemon(folium_map, lat, lon, image_url=DEFAULT_IMAGE_URL):
         # to fix strange folium cyrillic encoding bug
         icon=icon,
     ).add_to(folium_map)
-
-
 def show_all_pokemons(request):
     pokemon_locations = PokemonEntity.objects.all()
     folium_map = folium.Map(location=MOSCOW_CENTER, zoom_start=12)
@@ -38,8 +35,6 @@ def show_all_pokemons(request):
                 pokemon_location.lon,
                 request.build_absolute_uri(pokemon_location.pokemon.photo.url)
             )
-
-
     pokemons_on_page = []
     pokemons = Pokemon.objects.all()
     for pokemon in pokemons:
@@ -48,13 +43,10 @@ def show_all_pokemons(request):
             'img_url': request.build_absolute_uri(pokemon.photo.url),
             'title_ru': pokemon.title_ru,
         })
-
     return render(request, 'mainpage.html', context={
         'map': folium_map._repr_html_(),
         'pokemons': pokemons_on_page,
     })
-
-
 def show_pokemon(request, pokemon_id):
     pokemons = Pokemon.objects.all()
 
@@ -62,7 +54,7 @@ def show_pokemon(request, pokemon_id):
         if pokemon.id == int(pokemon_id):
             requested_pokemon = pokemon
             break
-
+    else:
         return HttpResponseNotFound('<h1>Такой покемон не найден</h1>')
 
     pokemon_info = {
@@ -71,8 +63,27 @@ def show_pokemon(request, pokemon_id):
         "title_en": requested_pokemon.title_en,
         "title_jp": requested_pokemon.title_jp,
         "img_url": request.build_absolute_uri(requested_pokemon.photo.url),
-        "description": requested_pokemon.description
-    }
+        "description": requested_pokemon.description,
+        "previous_evolution": requested_pokemon.previous_evolution
+        }
+
+    if requested_pokemon.previous_evolution:
+        pokemon_info["previous_evolution"] = {
+            "title_ru": requested_pokemon.previous_evolution.title_ru,
+            "pokemon_id": requested_pokemon.previous_evolution.id,
+            "img_url": request.build_absolute_uri(requested_pokemon.previous_evolution.photo.url)
+        }
+
+    try:
+        next_evolution = requested_pokemon.next_evolution.get()
+        if next_evolution:
+            pokemon_info["next_evolution"] = {
+                "title_ru": next_evolution.title_ru,
+                "pokemon_id": next_evolution.id,
+                "img_url": request.build_absolute_uri(next_evolution.photo.url)
+            }
+    except ObjectDoesNotExist:
+        pass
 
 
 
@@ -83,5 +94,6 @@ def show_pokemon(request, pokemon_id):
             pokemon_entity.lon,
             request.build_absolute_uri(pokemon_entity.pokemon.photo.url)
         )
-
-    return render(request, 'pokemon.html', context={'map': folium_map._repr_html_(), 'pokemon': pokemon_info})
+    return render(request, 'pokemon.html', context={
+        'map': folium_map._repr_html_(), 'pokemon': pokemon_info
+    })
