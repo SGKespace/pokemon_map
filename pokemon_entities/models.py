@@ -2,7 +2,7 @@ from django.db import models  # noqa F401
 
 
 class Pokemon(models.Model):
-    title_ru = models.CharField(max_length=200, blank=True, verbose_name="Название по-русски")
+    title_ru = models.CharField(max_length=200, verbose_name="Название по-русски")
     title_en = models.CharField(max_length=200, blank=True, verbose_name="Название по-английски")
     title_jp = models.CharField(max_length=200, blank=True, verbose_name="Название по-японски")
     photo = models.ImageField(upload_to='images', null=True, blank=True, verbose_name="Картинка")
