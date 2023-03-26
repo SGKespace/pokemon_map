@@ -75,7 +75,7 @@ def show_pokemon(request, pokemon_id):
         }
 
     try:
-        next_evolution = requested_pokemon.next_evolution.get()
+        next_evolution = requested_pokemon.next_evolutions.get()
         if next_evolution:
             pokemon_info["next_evolution"] = {
                 "title_ru": next_evolution.title_ru,
