@@ -56,11 +56,8 @@ def show_all_pokemons(request):
 
 def show_pokemon(request, pokemon_id):
     pokemons = Pokemon.objects.all()
-
     for pokemon in pokemons:
         requested_pokemon = get_object_or_404(Pokemon, id=pokemon_id)
-
-
     pokemon_info = {
         "pokemon_id": requested_pokemon.id,
         "title_ru": requested_pokemon.title_ru,
