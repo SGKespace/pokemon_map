@@ -16,7 +16,6 @@ class Pokemon(models.Model):
                                            )
 
     def __str__(self):
-        if self.title_ru:
             return self.title_ru
 
 
